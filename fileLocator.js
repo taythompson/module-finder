@@ -2,6 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 
+//array of files to skip in directory
 const filesToSkip = [
   ".DS_Store",
   ".babelrc",
@@ -23,10 +24,10 @@ const filesToSkip = [
   "webpack.config.js"
 ];
 
+//initialize empty array to store filenames
 let fileArray = [];
 
 // function will return only the files found in directory based on project path
-
 const locateDirectoryFiles = directoryPath => {
   const filesInDirectory = fs.readdirSync(directoryPath, "utf8");
 
@@ -45,6 +46,38 @@ const locateDirectoryFiles = directoryPath => {
   return fileArray;
 };
 
+locateDirectoryFiles("/Users/taylorthompson/vim-city");
+
+//read package.json file to find the modules required for the project
+const data = fs.readFileSync("/Users/taylorthompson/vim-city/package.json");
+
+const obj = JSON.parse(data);
+
+//store the keys from the dependencies section of package.json
+let keys = Object.keys(obj.dependencies);
+
+//function will filter through list of files found in directory and return the ones that contain the required modules
+async function fileWithModules(directoryPath) {
+  const contentFromFile = {};
+  try {
+    const filesToSearch = await locateDirectoryFiles(directoryPath);
+
+    filesToSearch.forEach(file => {
+      return fs.readFileSync(file, function(error, content) {
+        content = content.toString("utf-8");
+        if (error) {
+          console.error(error);
+        } else {
+          contentFromFile[file] = content;
+          console.log(contentFromFile);
+        }
+      });
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 const callbackFunc = (error, content) => {
   if (error) {
     console.error(error);
@@ -53,23 +86,4 @@ const callbackFunc = (error, content) => {
   }
 };
 
-locateDirectoryFiles("/Users/taylorthompson/vim-city");
-
-//function that will return the modules needed for project found in the package.json file
-
-const requiredModules = (directoryPath, callback) => {
-  const modules = fs.readFile(`${directoryPath}/package.json`, function(
-    error,
-    data
-  ) {
-    if (error) {
-      console.error(error);
-    } else {
-      let moduleObject = JSON.parse(data);
-      callback(null, moduleObject.dependencies);
-    }
-  });
-  return modules;
-};
-
-// requiredModules("/Users/taylorthompson/vim-city", callbackFunc);
+console.log(fileWithModules("/Users/taylorthompson/vim-city", callbackFunc));
