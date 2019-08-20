@@ -1,22 +1,48 @@
 /* eslint-disable quotes */
 const fs = require("fs");
+const path = require("path");
 
-// function will return the files found in directory based on project path
+const filesToSkip = [
+  ".DS_Store",
+  ".babelrc",
+  ".editorconfig",
+  ".esslintrc.json",
+  ".git",
+  ".github",
+  ".gitignore",
+  ".prettierignore",
+  ".prettierrc.yml",
+  ".travis.yml",
+  "CHANGELOG.md",
+  "LICENSE",
+  "README.md",
+  "node_modules",
+  "package-lock.json",
+  "package.json",
+  "secrets.js",
+  "webpack.config.js"
+];
 
-const locateDirectoryFiles = (directoryPath, callback) => {
-  const filesInDirectory = fs.readdirSync(directoryPath, function(
-    error,
-    files
-  ) {
-    if (error) {
-      console.log("Error locating files in directory: ", error);
-    } else {
-      console.log("These are the files in the project directory", files);
-      callback(null, files);
+let fileArray = [];
+
+// function will return only the files found in directory based on project path
+
+const locateDirectoryFiles = directoryPath => {
+  const filesInDirectory = fs.readdirSync(directoryPath, "utf8");
+
+  filesInDirectory.forEach(file => {
+    const skippedFiles = filesToSkip.indexOf(file) > -1;
+
+    let currentFile = directoryPath + "/" + file;
+
+    if (!skippedFiles && fs.statSync(currentFile).isFile()) {
+      fileArray.push(currentFile);
+    } else if (!skippedFiles) {
+      let currentDirectory = path.join(directoryPath + "//" + file);
+      locateDirectoryFiles(currentDirectory);
     }
   });
-
-  return filesInDirectory;
+  return fileArray;
 };
 
 const callbackFunc = (error, content) => {
@@ -27,18 +53,12 @@ const callbackFunc = (error, content) => {
   }
 };
 
-locateDirectoryFiles("/Users/taylorthompson/vim-city", callbackFunc);
+locateDirectoryFiles("/Users/taylorthompson/vim-city");
 
 //function that will return the modules needed for project found in the package.json file
 
 const requiredModules = (directoryPath, callback) => {
-  const filesFound = locateDirectoryFiles(directoryPath);
-
-  const packageJson = filesFound.filter(file => file === "package.json");
-
-  const packageName = packageJson.join();
-
-  const modules = fs.readFile(`${directoryPath}/${packageName}`, function(
+  const modules = fs.readFile(`${directoryPath}/package.json`, function(
     error,
     data
   ) {
@@ -52,4 +72,4 @@ const requiredModules = (directoryPath, callback) => {
   return modules;
 };
 
-requiredModules("/Users/taylorthompson/vim-city", callbackFunc);
+// requiredModules("/Users/taylorthompson/vim-city", callbackFunc);
